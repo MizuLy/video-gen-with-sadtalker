@@ -155,6 +155,10 @@ PAGE = """<!doctype html>
       </div>
     </div>
     <div class="field">
+      <label class="toggle"><input type="checkbox" id="fast"><span class="track"></span>
+        <span>Faster <small>(face only, no background)</small></span></label>
+    </div>
+    <div class="field">
       <label class="toggle"><input type="checkbox" id="enhance"><span class="track"></span>
         <span>Sharper face <small>(slower)</small></span></label>
     </div>
@@ -207,6 +211,7 @@ $("go").onclick = async () => {
   fd.append("text", text);
   fd.append("lang", document.querySelector("input[name=lang]:checked").value);
   fd.append("voice", document.querySelector("input[name=voice]:checked").value);
+  fd.append("fast", $("fast").checked ? "true" : "false");
   fd.append("enhance", $("enhance").checked ? "true" : "false");
   $("go").disabled = true;
   $("go").textContent = "Generating...";
@@ -251,6 +256,7 @@ def generate(
     lang: str = Form("km"),
     voice: str = Form("female"),
     enhance: bool = Form(False),
+    fast: bool = Form(False),
 ):
     job = JOBS / uuid.uuid4().hex
     job.mkdir()
@@ -274,7 +280,8 @@ def generate(
         "--driven_audio", str(wav),
         "--source_image", str(img),
         "--result_dir", str(job / "out"),
-        "--still", "--preprocess", "full",
+        "--still", "--preprocess", "crop" if fast else "full",
+        "--batch_size", "8",
     ]
     if enhance:
         cmd += ["--enhancer", "gfpgan"]
